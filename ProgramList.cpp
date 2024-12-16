@@ -1,6 +1,5 @@
 #include "ProgramList.h"
 #include <sstream>
-#include <regex>
 
 ProgramList::ProgramList()
 {
@@ -125,7 +124,7 @@ void ProgramList::run()
 		}
 		if (run(LineNum))
 			cur = cur->next;
-		emit RenewDisplaySignal();
+		//emit RenewDisplaySignal(); //发送信号会使运行速度大大降低
 	}
 	if (cur == nullptr) {
 		running = false;
@@ -309,8 +308,17 @@ void ProgramList::SentenseHandle(const std::string& sentence)
 {
 	if (sentence.empty()) return;
 	auto match = [&](std::string str)->bool {
-		std::regex pattern("^\\s*[0-9]+\\s*$");
-		return std::regex_match(str, pattern);
+		size_t start = str.find_first_not_of(" \t\n\r\f\v");
+		if (start == std::string::npos) {
+			return false;
+		}
+		size_t end = str.find_last_not_of(" \t\n\r\f\v");
+		for (size_t i = start; i <= end; ++i) {
+			if (!std::isdigit(str[i])) {
+				return false;
+			}
+		}
+		return true;
 		};
 	if (match(sentence)) {
 		del(sentence);
@@ -370,8 +378,17 @@ void ProgramList::add(const std::string& sentence)
 void ProgramList::del(const std::string& sentence)
 {
 	auto match = [&](std::string str)->bool {
-		std::regex pattern("^\\s*[0-9]+\\s*$");
-		return std::regex_match(str, pattern);
+		size_t start = str.find_first_not_of(" \t\n\r\f\v");
+		if (start == std::string::npos) {
+			return false;
+		}
+		size_t end = str.find_last_not_of(" \t\n\r\f\v");
+		for (size_t i = start; i <= end; ++i) {
+			if (!std::isdigit(str[i])) {
+				return false;
+			}
+		}
+		return true;
 		};
 	if (!match(sentence)) {
 		throw SyntaxExcep("Syntax Error: \"" + sentence + "\" is not an invalid number.");
@@ -391,6 +408,19 @@ void ProgramList::cmd(const std::string& sentence)
 	std::string cmd = sentence.substr(sentence.find_first_not_of(" "));
 	size_t pos = (cmd.find(" ") != std::string::npos) ? (cmd.find(" ")) : (cmd.size());
 	cmd = cmd.substr(0, pos);
+	auto match = [](std::string str)->bool {
+		size_t start = str.find_first_not_of(" \t\n\r\f\v");
+		if (start == std::string::npos) {
+			return false;
+		}
+		size_t end = str.find_last_not_of(" \t\n\r\f\v");
+		for (size_t i = start; i <= end; ++i) {
+			if (!std::isdigit(str[i])) {
+				return false;
+			}
+		}
+		return true;
+		};
 	if (cmd == "LET" || cmd == "PRINT" || cmd == "INPUT") {//三项后接program
 		SyntaxTree* program = new SyntaxTree(sentence);
 		ListNode temp(program);
@@ -416,8 +446,7 @@ void ProgramList::cmd(const std::string& sentence)
 	}
 	if (cmd == "ADD") {
 		int LineNum;
-		std::regex pattern("^\\s*[0-9]+\\s*$");
-		if (!std::regex_match(sentence.substr(3), pattern)) {
+		if (!match(sentence.substr(3))) {
 			throw CommandExcep("Syntax Error: Invalid line number at \"" + sentence + "\"");
 		}
 		LineNum = std::stoi(sentence.substr(3));
@@ -433,8 +462,7 @@ void ProgramList::cmd(const std::string& sentence)
 	}
 	else if (cmd == "DELETE") {
 		int LineNum;
-		std::regex pattern("^\\s*[0-9]+\\s*$");
-		if (!std::regex_match(sentence.substr(6), pattern)) {
+		if (!match(sentence.substr(6))) {
 			throw CommandExcep("Syntax Error: Invalid line number at \"" + sentence + "\"");
 		}
 		LineNum = std::stoi(sentence.substr(6));

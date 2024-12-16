@@ -1,6 +1,5 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include <regex>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -163,8 +162,20 @@ void MainWindow::on_cmdLineEdit_editingFinished()
             inputMode = false;
             ui->cmdLineEdit->setText("");
             ui->cmdLineEdit->setStyleSheet("QLineEdit { color: black; }");
-            std::regex pattern("^\\s*-?[0-9]+\\s*$");
-			if (!std::regex_match(valueStr, pattern)) {
+            auto match = [](std::string str)->bool {
+                size_t start = str.find_first_not_of(" \t\n\r\f\v");
+                if (start == std::string::npos) {
+                    return false;
+                }
+                size_t end = str.find_last_not_of(" \t\n\r\f\v");
+                for (size_t i = start; i <= end; ++i) {
+                    if (!std::isdigit(str[i])) {
+                        return false;
+                    }
+                }
+                return true;
+                };
+			if (!match(valueStr)) {
 				throw CommandExcep("Input Error: Invalid input at \"" + valueStr + "\"");
 			}
             int value = std::stoi(valueStr);

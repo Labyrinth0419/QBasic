@@ -1,5 +1,4 @@
 #include "SyntaxTree.h"
-#include <regex>
 
 void SyntaxTree::REMgenerate(std::string sentence)
 {
@@ -78,8 +77,17 @@ void SyntaxTree::GOTOgenerate(std::string sentence)
 {
 	root->command = "GOTO";
 	auto match = [&](std::string str)->bool {
-		std::regex pattern("^\\s*[0-9]+\\s*$");
-		return std::regex_match(str, pattern);
+		size_t start = str.find_first_not_of(" \t\n\r\f\v");
+		if (start == std::string::npos) {
+			return false;
+		}
+		size_t end = str.find_last_not_of(" \t\n\r\f\v");
+		for (size_t i = start; i <= end; ++i) {
+			if (!std::isdigit(str[i])) {
+				return false;
+			}
+		}
+		return true;
 		};
 	if (!match(sentence)) {
 		throw SyntaxExcep("Syntax Error: Invalid syntax at \"" + sentence + "\"");
