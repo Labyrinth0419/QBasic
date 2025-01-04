@@ -9,12 +9,53 @@ void SyntaxTree::REMgenerate(std::string sentence)
 
 void SyntaxTree::LETgenerate(std::string sentence)
 {
+	auto isVarNameValid = [=](std::string& name) -> bool {
+		int pos1 = 0, pos2 = 0;
+		for (int i = 0; i < name.size(); i++) {
+			if (name[i] == ' ') {
+				continue;
+			}
+			pos1 = i;
+			break;
+		}
+		for (int i = name.size() - 1; i >= 0; i--) {
+			if (name[i] == ' ') {
+				continue;
+			}
+			pos2 = i;
+			break;
+		}
+		name = name.substr(pos1, pos2 - pos1 + 1);
+		
+		const std::string reserved[7] = { "REM", "LET", "PRINT", "INPUT", "GOTO", "IF", "END" };
+		if (name.empty()) {
+			return false;
+		}
+		if (name[0] >= '0' && name[0] <= '9') {
+			return false;
+		}
+		for (char c : name) {
+			if (!((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))) {
+				return false;
+			}
+		}
+		for (const std::string& res : reserved) {
+			if (name == res) {
+				return false;
+			}
+		}
+		return true;
+		};
 	root->command = "LET =";
 	int pos = sentence.find("=");
 	if (pos == std::string::npos) {
 		throw SyntaxExcep("Syntax Error: Invalid syntax at \"" + sentence + "\"");
 	}
 	std::string var = sentence.substr(0, pos);
+	if (!isVarNameValid(var)) {
+		throw SyntaxExcep("Syntax Error: Invalid Variable Name at \"" + sentence 
+			+ "\", \"" + var + "\" is not valid.");
+	}
 	std::string exp = sentence.substr(pos + 1);
 	ExpTree* varTree = new ExpTree(var);
 	if (varTree->size() > 1) {
